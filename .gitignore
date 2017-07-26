@@ -8,3 +8,8 @@
 *.iml
 *.ipr
 *.iws
+
+**/*.settings/
+**/*.project
+**/*.classpath
+**.properties
