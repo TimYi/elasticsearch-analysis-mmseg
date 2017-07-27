@@ -33,6 +33,10 @@ public class ImportKeyword {
 					break;
 				}
 				}
+				if(keywords.size()==10000) {
+					keywordService.addKeywords(keywords);
+					keywords.clear();
+				}
 				tempString = reader.readLine();
 			}
 			keywordService.addKeywords(keywords);
