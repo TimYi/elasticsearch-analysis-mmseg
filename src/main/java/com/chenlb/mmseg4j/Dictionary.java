@@ -4,12 +4,18 @@ import org.elasticsearch.common.io.PathUtils;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.plugin.analysis.mmseg.AnalysisMMsegPlugin;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.jiurong.search.plugin.Container;
+import com.jiurong.search.plugin.Keyword;
+import com.jiurong.search.plugin.KeywordService;
 
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -23,7 +29,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author chenlb 2009-2-20 下午11:34:29
  */
 public class Dictionary {
-
+	
+	@Autowired
+	private KeywordService keywordService=Container.getBean(KeywordService.class);
+	
 	private static final ESLogger log = Loggers.getLogger("mmseg-analyzer");
 
 	private File dicPath;	//词库目录
@@ -151,8 +160,8 @@ public class Dictionary {
 
 		});
 	}
-
-	private Map<Character, CharNode> loadDic(File wordsPath) throws IOException {
+	//插件的loadDic方法
+	/*private Map<Character, CharNode> loadDic(File wordsPath) throws IOException {
 		InputStream charsIn;
 		File charsFile = new File(wordsPath, "chars.dic");
 		if(charsFile.exists()) {
@@ -208,18 +217,52 @@ public class Dictionary {
 		log.debug("[Dict Loading] load all dic use time=" + (now()-ss)+"ms");
 		return dic;
 	}
-
+*/
+	//修改后的loadDic方法
+	private Map<Character, CharNode> loadDic(File wordsPath )  throws IOException {
+		
+		final Map<Character, CharNode> dic = new HashMap<Character, CharNode>();
+		CharNode cn = null;
+		int lineNum;
+		long s = now();
+		long ss = s;
+		List<Keyword> chars = keywordService.getAllChars();
+		lineNum = chars.size();
+		Iterator<Keyword> it = keywordService.getAllChars().iterator();
+		while(it.hasNext()) {
+			cn = new CharNode();
+			Keyword charKeyword = it.next();
+			cn.setFreq((int)(Math.log(charKeyword.getFreq())*100));//字频计算出自由度
+			dic.put(charKeyword.getText().charAt(0), cn);
+		}
+		log.info("[Dict Loading] chars loaded time="+(now()-s)+"ms, line="+lineNum);
+		it = keywordService.getAllKeywords().iterator();
+		while(it.hasNext()) {
+			String string = it.next().getText();
+			cn = dic.get(string.charAt(0));
+			if(cn == null) {
+				cn = new CharNode();
+				dic.put(string.charAt(0), cn);
+			}
+			cn.addWordTail(tail(string));
+		}
+		
+		return dic;
+		
+	}
 	/**
 	 * @param is 词库文件流
 	 * @param dic 加载的词保存在结构中
 	 * @param wordsFile	日志用
 	 * @throws IOException from {@link #load(InputStream, FileLoading)}
 	 */
-	private void loadWord(InputStream is, Map<Character, CharNode> dic, File wordsFile) throws IOException {
+	
+	//会被loadDic调用，新的loadDic方法不需要
+	/*private void loadWord(InputStream is, Map<Character, CharNode> dic, File wordsFile) throws IOException {
 		long s = now();
 		int lineNum = load(is, new WordsFileLoading(dic)); //正常的词库
 		log.info("[Dict Loading] words loaded time="+(now()-s)+"ms, line="+lineNum+", on file="+wordsFile.getName());
-	}
+	}*/
 
 	private Map<Character, Object> loadUnit(File path) throws IOException {
 		InputStream fin;
