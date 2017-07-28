@@ -1,4 +1,4 @@
-package test.mmseg;
+package mmseg;
 
 import java.io.IOException;
 
@@ -7,16 +7,17 @@ import com.chenlb.mmseg4j.Seg;
 
 public class MaxWord extends Complex {
 
-    public MaxWord(String path) {
-        super(path);
-    }
+	public MaxWord(String path) {
+		super(path);
+	}
 
-    protected Seg getSeg() {
+	@Override
+	protected Seg getSeg() {
 
 		return new MaxWordSeg(dic);
 	}
 
 	public static void main(String[] args) throws IOException {
-//		new MaxWord().run(args);
+		// new MaxWord().run(args);
 	}
 }

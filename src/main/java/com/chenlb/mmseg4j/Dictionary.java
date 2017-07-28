@@ -1,5 +1,22 @@
 package com.chenlb.mmseg4j;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.elasticsearch.common.io.PathUtils;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
@@ -10,50 +27,41 @@ import com.jiurong.search.plugin.Container;
 import com.jiurong.search.plugin.Keyword;
 import com.jiurong.search.plugin.KeywordService;
 
-import java.io.*;
-import java.net.URL;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
  * 词典类. 词库目录单例模式.<br/>
  * 保存单字与其频率,还有词库.<br/>
- * 有检测词典变更的接口，外部程序可以使用 {@link #wordsFileIsChange()} 和 {@link #reload()} 来完成检测与加载的工作.
+ * 有检测词典变更的接口，外部程序可以使用 {@link #wordsFileIsChange()} 和 {@link #reload()}
+ * 来完成检测与加载的工作.
  *
  * @author chenlb 2009-2-20 下午11:34:29
  */
 public class Dictionary {
-	
+
 	@Autowired
-	private KeywordService keywordService=Container.getBean(KeywordService.class);
-	
+	private KeywordService keywordService = Container.getBean(KeywordService.class);
+
 	private static final ESLogger log = Loggers.getLogger("mmseg-analyzer");
 
-	private File dicPath;	//词库目录
+	private File dicPath; // 词库目录
 	private volatile Map<Character, CharNode> dict;
-	private volatile Map<Character, Object> unit;	//单个字的单位
+	private volatile Map<Character, Object> unit; // 单个字的单位
 
 	/** 记录 word 文件的最后修改时间 */
 	private Map<File, Long> wordsLastTime = null;
 	private long lastLoadTime = 0;
 
-	/** 不要直接使用, 通过 {@link #getDefalutPath()} 使用*/
+	/** 不要直接使用, 通过 {@link #getDefalutPath()} 使用 */
 	private static File defalutPath = null;
 	private static final ConcurrentHashMap<File, Dictionary> dics = new ConcurrentHashMap<File, Dictionary>();
 
-    /**
-     * 词典的目录
-     */
-    private Dictionary(File path) {
-        init(path);
-    }
+	/**
+	 * 词典的目录
+	 */
+	private Dictionary(File path) {
+		init(path);
+	}
 
+	@Override
 	protected void finalize() throws Throwable {
 		/*
 		 * 使 class reload 的时也可以释放词库
@@ -62,13 +70,15 @@ public class Dictionary {
 	}
 
 	/**
-	 * 从默认目录加载词库文件.<p/>
+	 * 从默认目录加载词库文件.
+	 * <p/>
 	 * 查找默认目录顺序:
 	 * <ol>
 	 * <li>从系统属性mmseg.dic.path指定的目录中加载</li>
 	 * <li>从classpath/data目录</li>
 	 * <li>从user.dir/data目录</li>
 	 * </ol>
+	 *
 	 * @see #getDefalutPath()
 	 */
 	public static Dictionary getInstance() {
@@ -77,19 +87,21 @@ public class Dictionary {
 	}
 
 	/**
-	 * @param path 词典的目录
+	 * @param path
+	 *            词典的目录
 	 */
 	public static Dictionary getInstance(String path) {
 		return getInstance(new File(path));
 	}
 
 	/**
-	 * @param path 词典的目录
+	 * @param path
+	 *            词典的目录
 	 */
 	public static Dictionary getInstance(File path) {
 		File normalizeDir = normalizeFile(path);
 		Dictionary dic = dics.get(normalizeDir);
-		if(dic == null) {
+		if (dic == null) {
 			dic = new Dictionary(normalizeDir);
 			dics.put(normalizeDir, dic);
 		}
@@ -97,13 +109,13 @@ public class Dictionary {
 	}
 
 	public static File normalizeFile(File file) {
-		if(file == defalutPath) {
+		if (file == defalutPath) {
 			return defalutPath;
 		}
 		try {
 			return file.getCanonicalFile();
 		} catch (IOException e) {
-			throw new RuntimeException("normalize file=["+file+"] fail", e);
+			throw new RuntimeException("normalize file=[" + file + "] fail", e);
 		}
 	}
 
@@ -127,6 +139,7 @@ public class Dictionary {
 
 	/**
 	 * 从单例缓存中去除
+	 *
 	 * @param path
 	 * @return 没有返回 null
 	 */
@@ -139,7 +152,7 @@ public class Dictionary {
 		dicPath = path;
 		wordsLastTime = new HashMap<File, Long>();
 
-		reload();	//加载词典
+		reload(); // 加载词典
 	}
 
 	private static long now() {
@@ -148,11 +161,13 @@ public class Dictionary {
 
 	/**
 	 * 只要 wordsXXX.dic的文件
+	 *
 	 * @return
 	 */
 	protected File[] listWordsFiles() {
 		return dicPath.listFiles(new FilenameFilter() {
 
+			@Override
 			public boolean accept(File dir, String name) {
 
 				return name.startsWith("words") && name.endsWith(".dic");
@@ -160,67 +175,48 @@ public class Dictionary {
 
 		});
 	}
-	//插件的loadDic方法
-	/*private Map<Character, CharNode> loadDic(File wordsPath) throws IOException {
-		InputStream charsIn;
-		File charsFile = new File(wordsPath, "chars.dic");
-		if(charsFile.exists()) {
-			charsIn = new FileInputStream(charsFile);
-			addLastTime(charsFile);	//chars.dic 也检测是否变更
-		} else {	//从 jar 里加载
-			charsIn = this.getClass().getResourceAsStream("/data/chars.dic");
-			charsFile = new File(this.getClass().getResource("/data/chars.dic").getFile());	//only for log
-		}
-		final Map<Character, CharNode> dic = new HashMap<Character, CharNode>();
-		int lineNum;
-		long s = now();
-		long ss = s;
-		lineNum = load(charsIn, new FileLoading() {	//单个字的
 
-			public void row(String line, int n) {
-				if(line.length() < 1) {
-					return;
-				}
-				String[] w = line.split(" ");
-				CharNode cn = new CharNode();
-				switch(w.length) {
-				case 2:
-					try {
-						cn.setFreq((int)(Math.log(Integer.parseInt(w[1]))*100));//字频计算出自由度
-					} catch(NumberFormatException e) {
-						//eat...
-					}
-				case 1:
+	// 插件的loadDic方法
+	/*
+	 * private Map<Character, CharNode> loadDic(File wordsPath) throws
+	 * IOException { InputStream charsIn; File charsFile = new File(wordsPath,
+	 * "chars.dic"); if(charsFile.exists()) { charsIn = new
+	 * FileInputStream(charsFile); addLastTime(charsFile); //chars.dic 也检测是否变更 }
+	 * else { //从 jar 里加载 charsIn =
+	 * this.getClass().getResourceAsStream("/data/chars.dic"); charsFile = new
+	 * File(this.getClass().getResource("/data/chars.dic").getFile()); //only
+	 * for log } final Map<Character, CharNode> dic = new HashMap<Character,
+	 * CharNode>(); int lineNum; long s = now(); long ss = s; lineNum =
+	 * load(charsIn, new FileLoading() { //单个字的
+	 *
+	 * public void row(String line, int n) { if(line.length() < 1) { return; }
+	 * String[] w = line.split(" "); CharNode cn = new CharNode();
+	 * switch(w.length) { case 2: try {
+	 * cn.setFreq((int)(Math.log(Integer.parseInt(w[1]))*100));//字频计算出自由度 }
+	 * catch(NumberFormatException e) { //eat... } case 1:
+	 *
+	 * dic.put(w[0].charAt(0), cn); } } });
+	 * log.info("[Dict Loading] chars loaded time="+(now()-s)+"ms, line="
+	 * +lineNum+", on file="+charsFile.getName());
+	 *
+	 * //try load words.dic in jar InputStream wordsDicIn =
+	 * this.getClass().getResourceAsStream("/data/words.dic"); if(wordsDicIn !=
+	 * null) { File wordsDic = new
+	 * File(this.getClass().getResource("/data/words.dic").getFile());
+	 * loadWord(wordsDicIn, dic, wordsDic); }
+	 *
+	 * File[] words = listWordsFiles(); //只要 wordsXXX.dic的文件 if(words != null) {
+	 * //扩展词库目录 for(File wordsFile : words) { loadWord(new
+	 * FileInputStream(wordsFile), dic, wordsFile);
+	 *
+	 * addLastTime(wordsFile); //用于检测是否修改 } }
+	 *
+	 * log.debug("[Dict Loading] load all dic use time=" + (now()-ss)+"ms");
+	 * return dic; }
+	 */
+	// 修改后的loadDic方法
+	private Map<Character, CharNode> loadDic(File wordsPath) throws IOException {
 
-					dic.put(w[0].charAt(0), cn);
-				}
-			}
-		});
-		log.info("[Dict Loading] chars loaded time="+(now()-s)+"ms, line="+lineNum+", on file="+charsFile.getName());
-
-		//try load words.dic in jar
-		InputStream wordsDicIn = this.getClass().getResourceAsStream("/data/words.dic");
-		if(wordsDicIn != null) {
-			File wordsDic = new File(this.getClass().getResource("/data/words.dic").getFile());
-			loadWord(wordsDicIn, dic, wordsDic);
-		}
-
-		File[] words = listWordsFiles();	//只要 wordsXXX.dic的文件
-		if(words != null) {	//扩展词库目录
-			for(File wordsFile : words) {
-				loadWord(new FileInputStream(wordsFile), dic, wordsFile);
-
-				addLastTime(wordsFile);	//用于检测是否修改
-			}
-		}
-
-		log.debug("[Dict Loading] load all dic use time=" + (now()-ss)+"ms");
-		return dic;
-	}
-*/
-	//修改后的loadDic方法
-	private Map<Character, CharNode> loadDic(File wordsPath )  throws IOException {
-		
 		final Map<Character, CharNode> dic = new HashMap<Character, CharNode>();
 		CharNode cn = null;
 		int lineNum;
@@ -229,48 +225,55 @@ public class Dictionary {
 		List<Keyword> chars = keywordService.getAllChars();
 		lineNum = chars.size();
 		Iterator<Keyword> it = keywordService.getAllChars().iterator();
-		while(it.hasNext()) {
+		while (it.hasNext()) {
 			cn = new CharNode();
 			Keyword charKeyword = it.next();
-			cn.setFreq((int)(Math.log(charKeyword.getFreq())*100));//字频计算出自由度
+			cn.setFreq((int) (Math.log(charKeyword.getFreq()) * 100));// 字频计算出自由度
 			dic.put(charKeyword.getText().charAt(0), cn);
 		}
-		log.info("[Dict Loading] chars loaded time="+(now()-s)+"ms, line="+lineNum);
+		log.info("[Dict Loading] chars loaded time=" + (now() - s) + "ms, line=" + lineNum);
 		it = keywordService.getAllKeywords().iterator();
-		while(it.hasNext()) {
+		while (it.hasNext()) {
 			String string = it.next().getText();
 			cn = dic.get(string.charAt(0));
-			if(cn == null) {
+			if (cn == null) {
 				cn = new CharNode();
 				dic.put(string.charAt(0), cn);
 			}
 			cn.addWordTail(tail(string));
 		}
-		
+
 		return dic;
-		
+
 	}
+
 	/**
-	 * @param is 词库文件流
-	 * @param dic 加载的词保存在结构中
-	 * @param wordsFile	日志用
-	 * @throws IOException from {@link #load(InputStream, FileLoading)}
+	 * @param is
+	 *            词库文件流
+	 * @param dic
+	 *            加载的词保存在结构中
+	 * @param wordsFile
+	 *            日志用
+	 * @throws IOException
+	 *             from {@link #load(InputStream, FileLoading)}
 	 */
-	
-	//会被loadDic调用，新的loadDic方法不需要
-	/*private void loadWord(InputStream is, Map<Character, CharNode> dic, File wordsFile) throws IOException {
-		long s = now();
-		int lineNum = load(is, new WordsFileLoading(dic)); //正常的词库
-		log.info("[Dict Loading] words loaded time="+(now()-s)+"ms, line="+lineNum+", on file="+wordsFile.getName());
-	}*/
+
+	// 会被loadDic调用，新的loadDic方法不需要
+	/*
+	 * private void loadWord(InputStream is, Map<Character, CharNode> dic, File
+	 * wordsFile) throws IOException { long s = now(); int lineNum = load(is,
+	 * new WordsFileLoading(dic)); //正常的词库
+	 * log.info("[Dict Loading] words loaded time="+(now()-s)+"ms, line="
+	 * +lineNum+", on file="+wordsFile.getName()); }
+	 */
 
 	private Map<Character, Object> loadUnit(File path) throws IOException {
 		InputStream fin;
 		File unitFile = new File(path, "units.dic");
-		if(unitFile.exists()) {
+		if (unitFile.exists()) {
 			fin = new FileInputStream(unitFile);
 			addLastTime(unitFile);
-		} else {	//在jar包里的/data/unit.dic
+		} else { // 在jar包里的/data/unit.dic
 			fin = Dictionary.class.getResourceAsStream("/data/units.dic");
 			unitFile = new File(Dictionary.class.getResource("/data/units.dic").getFile());
 		}
@@ -280,14 +283,16 @@ public class Dictionary {
 		long s = now();
 		int lineNum = load(fin, new FileLoading() {
 
+			@Override
 			public void row(String line, int n) {
-				if(line.length() != 1) {
+				if (line.length() != 1) {
 					return;
 				}
 				localUnit.put(line.charAt(0), Dictionary.class);
 			}
 		});
-		log.info("[Dict Loading] unit loaded time="+(now()-s)+"ms, line="+lineNum+", on file="+unitFile.getName());
+		log.info("[Dict Loading] unit loaded time=" + (now() - s) + "ms, line=" + lineNum + ", on file="
+		        + unitFile.getName());
 
 		return localUnit;
 	}
@@ -301,18 +306,20 @@ public class Dictionary {
 		final Map<Character, CharNode> dic;
 
 		/**
-		 * @param dic 加载的词，保存在此结构中。
+		 * @param dic
+		 *            加载的词，保存在此结构中。
 		 */
 		public WordsFileLoading(Map<Character, CharNode> dic) {
 			this.dic = dic;
 		}
 
+		@Override
 		public void row(String line, int n) {
-			if(line.length() < 2) {
+			if (line.length() < 2) {
 				return;
 			}
 			CharNode cn = dic.get(line.charAt(0));
-			if(cn == null) {
+			if (cn == null) {
 				cn = new CharNode();
 				dic.put(line.charAt(0), cn);
 			}
@@ -322,15 +329,15 @@ public class Dictionary {
 
 	/**
 	 * 加载词文件的模板
+	 *
 	 * @return 文件总行数
 	 */
 	public static int load(InputStream fin, FileLoading loading) throws IOException {
-		BufferedReader br = new BufferedReader(
-				new InputStreamReader(new BufferedInputStream(fin), "UTF-8"));
+		BufferedReader br = new BufferedReader(new InputStreamReader(new BufferedInputStream(fin), "UTF-8"));
 		String line;
 		int n = 0;
-		while((line = br.readLine()) != null) {
-			if(line == null || line.startsWith("#")) {
+		while ((line = br.readLine()) != null) {
+			if (line == null || line.startsWith("#")) {
 				continue;
 			}
 			n++;
@@ -341,18 +348,21 @@ public class Dictionary {
 
 	/**
 	 * 取得 str 除去第一个char的部分
+	 *
 	 * @author chenlb 2009-3-3 下午10:05:26
 	 */
 	private static char[] tail(String str) {
-		char[] cs = new char[str.length()-1];
+		char[] cs = new char[str.length() - 1];
 		str.getChars(1, str.length(), cs, 0);
 		return cs;
 	}
 
 	public static interface FileLoading {
 		/**
-		 * @param line 读出的一行
-		 * @param n 当前第几行
+		 * @param line
+		 *            读出的一行
+		 * @param n
+		 *            当前第几行
 		 * @author chenlb 2009-3-3 下午09:55:54
 		 */
 		void row(String line, int n);
@@ -360,34 +370,37 @@ public class Dictionary {
 
 	/**
 	 * 把 wordsFile 文件的最后更新时间加记录下来.
-	 * @param wordsFile 非 null
+	 *
+	 * @param wordsFile
+	 *            非 null
 	 */
 	private synchronized void addLastTime(File wordsFile) {
-		if(wordsFile != null) {
+		if (wordsFile != null) {
 			wordsLastTime.put(wordsFile, wordsFile.lastModified());
 		}
 	}
 
 	/**
 	 * 词典文件是否有修改过
+	 *
 	 * @return
 	 */
 	public synchronized boolean wordsFileIsChange() {
-		//检查是否有修改文件,包括删除的
-		for(Entry<File, Long> flt : wordsLastTime.entrySet()) {
+		// 检查是否有修改文件,包括删除的
+		for (Entry<File, Long> flt : wordsLastTime.entrySet()) {
 			File words = flt.getKey();
-			if(!words.canRead()) {	//可能是删除了
+			if (!words.canRead()) { // 可能是删除了
 				return true;
 			}
-			if(words.lastModified() > flt.getValue()) {	//更新了文件
+			if (words.lastModified() > flt.getValue()) { // 更新了文件
 				return true;
 			}
 		}
-		//检查是否有新文件
+		// 检查是否有新文件
 		File[] words = listWordsFiles();
-		if(words != null) {
-			for(File wordsFile : words) {
-				if(!wordsLastTime.containsKey(wordsFile)) {	//有新词典文件
+		if (words != null) {
+			for (File wordsFile : words) {
+				if (!wordsLastTime.containsKey(wordsFile)) { // 有新词典文件
 					return true;
 				}
 			}
@@ -396,8 +409,10 @@ public class Dictionary {
 	}
 
 	/**
-	 * 全新加载词库，没有成功加载会回滚。<P/>
+	 * 全新加载词库，没有成功加载会回滚。
+	 * <P/>
 	 * 注意：重新加载时，务必有两倍的词库树结构的内存，默认词库是 50M/个 左右。否则抛出 OOM。
+	 *
 	 * @return 是否成功加载
 	 */
 	public synchronized boolean reload() {
@@ -411,12 +426,12 @@ public class Dictionary {
 			unit = loadUnit(dicPath);
 			lastLoadTime = System.currentTimeMillis();
 		} catch (IOException e) {
-			//rollback
+			// rollback
 			wordsLastTime.putAll(oldWordsLastTime);
 			dict = oldDict;
 			unit = oldUnit;
 
-            log.warn("reload dic error! dic="+dicPath+", and rollbacked.", e);
+			log.warn("reload dic error! dic=" + dicPath + ", and rollbacked.", e);
 
 			return false;
 		}
@@ -425,14 +440,15 @@ public class Dictionary {
 
 	/**
 	 * word 能否在词库里找到
+	 *
 	 * @author chenlb 2009-3-3 下午11:10:45
 	 */
 	public boolean match(String word) {
-		if(word == null || word.length() < 2) {
+		if (word == null || word.length() < 2) {
 			return false;
 		}
 		CharNode cn = dict.get(word.charAt(0));
-		return search(cn, word.toCharArray(), 0, word.length()-1) >= 0;
+		return search(cn, word.toCharArray(), 0, word.length() - 1) >= 0;
 	}
 
 	public CharNode head(char ch) {
@@ -441,11 +457,12 @@ public class Dictionary {
 
 	/**
 	 * sen[offset] 后 tailLen 长的词是否存在.
+	 *
 	 * @see CharNode#indexOf(char[], int, int)
 	 * @author chenlb 2009-4-8 下午11:13:49
 	 */
 	public int search(CharNode node, char[] sen, int offset, int tailLen) {
-		if(node != null) {
+		if (node != null) {
 			return node.indexOf(sen, offset, tailLen);
 		}
 		return -1;
@@ -457,8 +474,8 @@ public class Dictionary {
 	}
 
 	public int maxMatch(CharNode node, char[] sen, int offset) {
-		if(node != null) {
-			return node.maxMatch(sen, offset+1);
+		if (node != null) {
+			return node.maxMatch(sen, offset + 1);
 		}
 		return 0;
 	}
@@ -466,8 +483,8 @@ public class Dictionary {
 	public List<Integer> maxMatch(CharNode node, List<Integer> tailLens, char[] sen, int offset) {
 		tailLens.clear();
 		tailLens.add(0);
-		if(node != null) {
-			return node.maxMatch(tailLens, sen, offset+1);
+		if (node != null) {
+			return node.maxMatch(tailLens, sen, offset + 1);
 		}
 		return tailLens;
 	}
@@ -480,24 +497,24 @@ public class Dictionary {
 	 * 当 words.dic 是从 jar 里加载时, 可能 defalut 不存在
 	 */
 	public static File getDefalutPath() {
-		if(defalutPath == null) {
+		if (defalutPath == null) {
 			String defPath = System.getProperty("mmseg.dic.path");
-			log.info("look up in mmseg.dic.path="+defPath);
-			if(defPath == null) {
+			log.info("look up in mmseg.dic.path=" + defPath);
+			if (defPath == null) {
 				URL url = Dictionary.class.getClassLoader().getResource("data");
-				if(url != null) {
+				if (url != null) {
 					defPath = url.getFile();
-					log.info("look up in classpath="+defPath);
+					log.info("look up in classpath=" + defPath);
 				} else {
-					defPath = System.getProperty("user.dir")+"/data";
-					log.info("look up in user.dir="+defPath);
+					defPath = System.getProperty("user.dir") + "/data";
+					log.info("look up in user.dir=" + defPath);
 				}
 
 			}
 
 			defalutPath = new File(defPath);
-			if(!defalutPath.exists()) {
-				log.warn("defalut dic path="+defalutPath+" not exist");
+			if (!defalutPath.exists()) {
+				log.warn("defalut dic path=" + defalutPath + " not exist");
 			}
 		}
 		return defalutPath;
@@ -523,8 +540,9 @@ public class Dictionary {
 	}
 
 	public static String getDictRoot() {
-		return PathUtils.get(
-				new File(AnalysisMMsegPlugin.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent(), "config")
-				.toAbsolutePath().toString();
+		return PathUtils
+		        .get(new File(AnalysisMMsegPlugin.class.getProtectionDomain().getCodeSource().getLocation().getPath())
+		                .getParent(), "config")
+		        .toAbsolutePath().toString();
 	}
 }
