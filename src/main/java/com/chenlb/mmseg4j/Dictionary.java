@@ -11,7 +11,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -223,17 +222,16 @@ public class Dictionary {
 		long s = now();
 		List<Keyword> chars = keywordService.getAllChars();
 		lineNum = chars.size();
-		Iterator<Keyword> it = keywordService.getAllChars().iterator();
-		while (it.hasNext()) {
+		for(Keyword keyword:chars) {
 			cn = new CharNode();
-			Keyword charKeyword = it.next();
+			Keyword charKeyword = keyword;
 			cn.setFreq((int) (Math.log(charKeyword.getFreq()) * 100));// 字频计算出自由度
 			dic.put(charKeyword.getText().charAt(0), cn);
 		}
 		log.info("[Dict Loading] chars loaded time=" + (now() - s) + "ms, line=" + lineNum);
-		it = keywordService.getAllKeywords().iterator();
-		while (it.hasNext()) {
-			String string = it.next().getText();
+		List<Keyword> keywords = keywordService.getAllKeywords();
+		for(Keyword keyword:keywords) {
+			String string = keyword.getText();
 			cn = dic.get(string.charAt(0));
 			if (cn == null) {
 				cn = new CharNode();
@@ -241,13 +239,12 @@ public class Dictionary {
 			}
 			cn.addWordTail(tail(string));
 		}
-
 		return dic;
 
 	}
 	
-	public void  addKeywords(List<Keyword> keywords, KeywordService keywordService) {
-		final Map<Character, CharNode> dic = this.dict;
+	public void addKeywords(List<Keyword> keywords) {
+		final Map<Character, CharNode> dic = new HashMap<Character, CharNode>(dict);
 		CharNode cn = null;
 		for(Keyword keyword:keywords) {
 			String string = keyword.getText();
@@ -258,10 +255,7 @@ public class Dictionary {
 			}
 			cn.addWordTail(tail(string));
 		}
-		if() {
-			this.dict = dic;
-		}
-		
+		dict = dic;
 	}
 
 	/**
@@ -318,14 +312,16 @@ public class Dictionary {
 	 * 加载 wordsXXX.dic 文件类。
 	 *
 	 * @author chenlb 2009-10-15 下午02:12:55
-	 */
-	private static class WordsFileLoading implements FileLoading {
+	 *///
+	
+	//修改后不需要的方法
+/*	private static class WordsFileLoading implements FileLoading {
 		final Map<Character, CharNode> dic;
 
-		/**
+		*//**
 		 * @param dic
 		 *            加载的词，保存在此结构中。
-		 */
+		 *//*
 		public WordsFileLoading(Map<Character, CharNode> dic) {
 			this.dic = dic;
 		}
@@ -342,7 +338,7 @@ public class Dictionary {
 			}
 			cn.addWordTail(tail(line));
 		}
-	}
+	}*/
 
 	/**
 	 * 加载词文件的模板
