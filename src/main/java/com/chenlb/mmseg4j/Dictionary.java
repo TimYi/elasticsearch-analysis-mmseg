@@ -221,7 +221,6 @@ public class Dictionary {
 		CharNode cn = null;
 		int lineNum;
 		long s = now();
-		long ss = s;
 		List<Keyword> chars = keywordService.getAllChars();
 		lineNum = chars.size();
 		Iterator<Keyword> it = keywordService.getAllChars().iterator();
@@ -245,6 +244,24 @@ public class Dictionary {
 
 		return dic;
 
+	}
+	
+	public void  addKeywords(List<Keyword> keywords, KeywordService keywordService) {
+		final Map<Character, CharNode> dic = this.dict;
+		CharNode cn = null;
+		for(Keyword keyword:keywords) {
+			String string = keyword.getText();
+			cn = dic.get(string.charAt(0));
+			if (cn == null) {
+				cn = new CharNode();
+				dic.put(string.charAt(0), cn);
+			}
+			cn.addWordTail(tail(string));
+		}
+		if() {
+			this.dict = dic;
+		}
+		
 	}
 
 	/**
