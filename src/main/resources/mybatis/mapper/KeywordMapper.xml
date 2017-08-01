@@ -10,19 +10,20 @@
     	<result property="isChar" column="is_char"/>
     	<result property="freq" column="freq"/>
     	<result property="createTime" column="create_time"/>
+    	<result property="isNewWord" column="is_newword"/>
     </resultMap>
     
     <sql id="dbname">mmseg_keyword</sql>
     
     <insert id="add" parameterType="com.jiurong.search.plugin.Keyword">
-        insert into <include refid="dbname" />(text, is_char, freq, create_time)
-        values(#{text}, #{isChar}, #{freq}, NOW())
+        insert into <include refid="dbname" />(text, is_char, freq, create_time, is_newword)
+        values(#{text}, #{isChar}, #{freq}, NOW(), #{isNewWord})
     </insert>
     <insert id="addAll" parameterType="com.jiurong.search.plugin.Keyword">
-        insert into <include refid="dbname" />(text, is_char, freq, create_time)
+        insert into <include refid="dbname" />(text, is_char, freq, create_time, is_newword)
         values
         <foreach collection="collection" separator="," item="i">
-            (#{i.text}, #{i.isChar}, #{i.freq}, NOW())
+            (#{i.text}, #{i.isChar}, #{i.freq}, NOW(), #{i.isNewWord})
         </foreach>
     </insert>
     <select id="exists" resultType="int">
@@ -35,8 +36,14 @@
     <select id="findAllChars" resultMap="Keyword">
     	select * from <include refid="dbname" /> where is_char = 1
     </select>
+    <select id="latestUpdate" resultType="Date">
+    	select max(create_time) from <include refid="dbname" />
+    </select>
+    <select id="findAllNewWords" resultMap="Keyword">
+    	select * from <include refid="dbname" /> where is_newword = 1
+    </select>
+    <update id="updateIsNewWord">
+    	update <include refid="dbname" /> set is_newword = 0
+    </update>
+    
 </mapper>
-
-
-
-

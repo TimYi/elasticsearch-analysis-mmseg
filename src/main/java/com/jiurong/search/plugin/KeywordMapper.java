@@ -1,5 +1,7 @@
 package com.jiurong.search.plugin;
 
+
+import java.util.Date;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
@@ -16,4 +18,10 @@ public interface KeywordMapper {
 	List<Keyword> findAllWords();
 
 	List<Keyword> findAllChars();
+	
+	Date latestUpdate();
+	
+	void updateIsNewWord();
+	
+	List<Keyword> findAllNewWords();
 }

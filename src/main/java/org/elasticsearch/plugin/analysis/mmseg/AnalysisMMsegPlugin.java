@@ -35,7 +35,6 @@ public class AnalysisMMsegPlugin extends Plugin {
         return "analysis-mmseg";
     }
 
-
     @Override public String description() {
         return "mmseg analysis";
     }

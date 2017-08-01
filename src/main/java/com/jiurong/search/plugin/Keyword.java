@@ -8,6 +8,15 @@ public class Keyword {
 	private boolean isChar;
 	private Integer freq;
 	private Date createTime;
+	private boolean isNewWord;
+
+	public boolean isNewWord() {
+		return isNewWord;
+	}
+
+	public void setNewWord(boolean isNewWord) {
+		this.isNewWord = isNewWord;
+	}
 
 	private Keyword() {
 
@@ -25,6 +34,7 @@ public class Keyword {
 		Keyword keyword = new Keyword();
 		keyword.setText(word);
 		keyword.setChar(false);
+		keyword.setNewWord(true);
 		return keyword;
 	}
 

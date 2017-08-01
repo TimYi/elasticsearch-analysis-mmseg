@@ -20,8 +20,6 @@ import org.elasticsearch.common.io.PathUtils;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.plugin.analysis.mmseg.AnalysisMMsegPlugin;
-import org.springframework.beans.factory.annotation.Autowired;
-
 import com.jiurong.search.plugin.Container;
 import com.jiurong.search.plugin.Keyword;
 import com.jiurong.search.plugin.KeywordService;
@@ -36,7 +34,7 @@ import com.jiurong.search.plugin.KeywordService;
  */
 public class Dictionary {
 
-	@Autowired
+	
 	private KeywordService keywordService = Container.getBean(KeywordService.class);
 
 	private static final ESLogger log = Loggers.getLogger("mmseg-analyzer");
@@ -58,6 +56,7 @@ public class Dictionary {
 	 */
 	private Dictionary(File path) {
 		init(path);
+		keywordService.setDic(this);
 	}
 
 	@Override
@@ -243,7 +242,7 @@ public class Dictionary {
 
 	}
 	
-	public void addKeywords(List<Keyword> keywords) {
+	public void addKeywordsToDic(List<Keyword> keywords) {
 		final Map<Character, CharNode> dic = new HashMap<Character, CharNode>(dict);
 		CharNode cn = null;
 		for(Keyword keyword:keywords) {
