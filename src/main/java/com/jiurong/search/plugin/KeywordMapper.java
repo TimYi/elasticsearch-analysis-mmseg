@@ -1,6 +1,5 @@
 package com.jiurong.search.plugin;
 
-
 import java.util.Date;
 import java.util.List;
 
@@ -18,10 +17,10 @@ public interface KeywordMapper {
 	List<Keyword> findAllWords();
 
 	List<Keyword> findAllChars();
-	
+
 	Date latestUpdate();
-	
-	void updateIsNewWord();
-	
+
+	void updateIsNewWord(Date maxCreateDate);
+
 	List<Keyword> findAllNewWords();
 }

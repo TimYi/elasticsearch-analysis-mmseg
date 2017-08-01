@@ -18,11 +18,11 @@ public interface KeywordService {
 	public List<Keyword> getAllKeywords();
 
 	public List<Keyword> getAllChars();
-	
-	public void work();
-	
+
+	public void syncNewWords();
+
 	public Dictionary getDic();
-	
+
 	public void setDic(Dictionary dic);
 
 }
