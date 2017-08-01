@@ -77,7 +77,7 @@ public class Complex {
 
 	public static void main(String[] args) throws IOException {
 
-		// new Complex().run(args);
+		 new Complex("/date").run(args);
 	}
 
 }
