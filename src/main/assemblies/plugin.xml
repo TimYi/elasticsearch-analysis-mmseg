@@ -24,8 +24,8 @@
             <useProjectArtifact>true</useProjectArtifact>
             <useTransitiveFiltering>true</useTransitiveFiltering>
             <excludes>
-                <exclude>org.elasticsearch:elasticsearch</exclude>
+                <exclude>org.elasticsearch:elasticsearch:jar</exclude>
             </excludes>
-        </dependencySet>        
+        </dependencySet>
     </dependencySets>
 </assembly>
