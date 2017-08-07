@@ -16,7 +16,6 @@ public class KeywordServiceImplTest {
 	@Test
 	public void test() {
 		keywordService.addKeyword("共享汽车");
-
 	}
 
 }

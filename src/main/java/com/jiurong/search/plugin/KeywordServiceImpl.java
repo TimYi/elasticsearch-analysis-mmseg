@@ -13,10 +13,12 @@ import com.chenlb.mmseg4j.Dictionary;
 public class KeywordServiceImpl implements KeywordService {
 	Dictionary dic;
 
+	@Override
 	public Dictionary getDic() {
 		return dic;
 	}
 
+	@Override
 	public void setDic(Dictionary dic) {
 		this.dic = dic;
 	}
@@ -25,11 +27,13 @@ public class KeywordServiceImpl implements KeywordService {
 	@Autowired
 	private KeywordMapper keywordMapper;
 
+	@Override
 	public void addChar(String character, Integer freq) {
 		Keyword entity = Keyword.createChar(character, freq);
 		saveKeyword(entity);
 	}
 
+	@Override
 	public void addKeyword(String keyword) {
 		Keyword entity = Keyword.createWord(keyword);
 		saveKeyword(entity);
@@ -46,14 +50,17 @@ public class KeywordServiceImpl implements KeywordService {
 		keywordMapper.add(keyword);
 	}
 
+	@Override
 	public void addKeywords(List<Keyword> keywords) {
 		keywordMapper.addAll(keywords);
 	}
 
+	@Override
 	public List<Keyword> getAllKeywords() {
 		return keywordMapper.findAllWords();
 	}
 
+	@Override
 	public List<Keyword> getAllChars() {
 		return keywordMapper.findAllChars();
 	}
@@ -70,6 +77,7 @@ public class KeywordServiceImpl implements KeywordService {
 		return keywordMapper.latestUpdate();
 	}
 
+	@Override
 	@Scheduled(fixedDelay = 1000)
 	public void syncNewWords() {
 		java.util.Date utilDate = getLatestUpdate();
@@ -80,7 +88,6 @@ public class KeywordServiceImpl implements KeywordService {
 				dic.addKeywordsToDic(newWords);
 				updateIsNewWord(maxCreateDate);
 			}
-
 		}
 	}
 
