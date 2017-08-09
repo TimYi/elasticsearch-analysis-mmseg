@@ -8,33 +8,34 @@
     <fileSets>
         <fileSet>
             <directory>${project.basedir}/config</directory>
-            <outputDirectory>config</outputDirectory>
+            <outputDirectory>elasticsearch/config</outputDirectory>
         </fileSet>
     </fileSets>
     <files>
         <file>
             <source>${project.basedir}/src/main/resources/plugin-descriptor.properties</source>
-            <outputDirectory></outputDirectory>
+            <outputDirectory>elasticsearch</outputDirectory>
             <filtered>true</filtered>
         </file>
         <file>
             <source>${project.basedir}/src/main/resources/plugin-security.policy</source>
-            <outputDirectory></outputDirectory>
+            <outputDirectory>elasticsearch</outputDirectory>
             <filtered>true</filtered>
         </file>
         <file>
             <source>${project.basedir}/src/main/resources/app.properties</source>
-            <outputDirectory></outputDirectory>
+            <outputDirectory>elasticsearch</outputDirectory>
             <filtered>true</filtered>
         </file>
     </files>
     <dependencySets>
         <dependencySet>
-            <outputDirectory>/</outputDirectory>
+            <outputDirectory>elasticsearch/</outputDirectory>
             <useProjectArtifact>true</useProjectArtifact>
             <useTransitiveFiltering>true</useTransitiveFiltering>
             <excludes>
                 <exclude>org.elasticsearch:elasticsearch:jar</exclude>
+                <exclude>org.apache.logging.log4j:log4j-api:jar</exclude>
             </excludes>
         </dependencySet>
     </dependencySets>

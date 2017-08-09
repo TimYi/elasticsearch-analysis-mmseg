@@ -33,11 +33,7 @@ import org.elasticsearch.indices.analysis.AnalysisModule;
 import org.elasticsearch.plugins.AnalysisPlugin;
 import org.elasticsearch.plugins.Plugin;
 
-import com.chenlb.mmseg4j.Dictionary;
-
 public class AnalysisMMsegPlugin extends Plugin implements AnalysisPlugin {
-
-	final Dictionary dic = Dictionary.getInstance();
 
 	@Override
 	public Map<String, AnalysisModule.AnalysisProvider<TokenizerFactory>> getTokenizers() {
