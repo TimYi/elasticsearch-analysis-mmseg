@@ -3,8 +3,8 @@ package com.jiurong.search.plugin;
 import java.util.Date;
 import java.util.List;
 
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.apache.logging.log4j.Logger;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import com.chenlb.mmseg4j.Dictionary;
 @Service
 public class KeywordServiceImpl implements KeywordService {
 
-	private static final ESLogger log = Loggers.getLogger("mmseg-analyzer");
+	private static final Logger log = ESLoggerFactory.getLogger(KeywordService.class.getName());
 
 	Dictionary dic;
 
