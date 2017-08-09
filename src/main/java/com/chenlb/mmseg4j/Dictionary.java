@@ -16,10 +16,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.io.PathUtils;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.logging.ESLoggerFactory;
 import org.elasticsearch.plugin.analysis.mmseg.AnalysisMMsegPlugin;
+
 import com.jiurong.search.plugin.Container;
 import com.jiurong.search.plugin.Keyword;
 import com.jiurong.search.plugin.KeywordService;
@@ -34,10 +35,8 @@ import com.jiurong.search.plugin.KeywordService;
  */
 public class Dictionary {
 
-	
 	private KeywordService keywordService = Container.getBean(KeywordService.class);
-
-	private static final ESLogger log = Loggers.getLogger("mmseg-analyzer");
+	private static final Logger log = ESLoggerFactory.getLogger(Dictionary.class.getName());
 
 	private File dicPath; // 词库目录
 	private volatile Map<Character, CharNode> dict;
@@ -221,7 +220,7 @@ public class Dictionary {
 		long s = now();
 		List<Keyword> chars = keywordService.getAllChars();
 		lineNum = chars.size();
-		for(Keyword keyword:chars) {
+		for (Keyword keyword : chars) {
 			cn = new CharNode();
 			Keyword charKeyword = keyword;
 			cn.setFreq((int) (Math.log(charKeyword.getFreq()) * 100));// 字频计算出自由度
@@ -229,7 +228,7 @@ public class Dictionary {
 		}
 		log.info("[Dict Loading] chars loaded time=" + (now() - s) + "ms, line=" + lineNum);
 		List<Keyword> keywords = keywordService.getAllKeywords();
-		for(Keyword keyword:keywords) {
+		for (Keyword keyword : keywords) {
 			String string = keyword.getText();
 			cn = dic.get(string.charAt(0));
 			if (cn == null) {
@@ -241,11 +240,11 @@ public class Dictionary {
 		return dic;
 
 	}
-	
+
 	public void addKeywordsToDic(List<Keyword> keywords) {
 		final Map<Character, CharNode> dic = new HashMap<Character, CharNode>(dict);
 		CharNode cn = null;
-		for(Keyword keyword:keywords) {
+		for (Keyword keyword : keywords) {
 			String string = keyword.getText();
 			cn = dic.get(string.charAt(0));
 			if (cn == null) {
@@ -312,32 +311,24 @@ public class Dictionary {
 	 *
 	 * @author chenlb 2009-10-15 下午02:12:55
 	 *///
-	
-	//修改后不需要的方法
-/*	private static class WordsFileLoading implements FileLoading {
-		final Map<Character, CharNode> dic;
 
-		*//**
-		 * @param dic
-		 *            加载的词，保存在此结构中。
-		 *//*
-		public WordsFileLoading(Map<Character, CharNode> dic) {
-			this.dic = dic;
-		}
-
-		@Override
-		public void row(String line, int n) {
-			if (line.length() < 2) {
-				return;
-			}
-			CharNode cn = dic.get(line.charAt(0));
-			if (cn == null) {
-				cn = new CharNode();
-				dic.put(line.charAt(0), cn);
-			}
-			cn.addWordTail(tail(line));
-		}
-	}*/
+	// 修改后不需要的方法
+	/*
+	 * private static class WordsFileLoading implements FileLoading { final
+	 * Map<Character, CharNode> dic;
+	 * 
+	 *//**
+	   * @param dic
+	   *            加载的词，保存在此结构中。
+	   *//*
+	     * public WordsFileLoading(Map<Character, CharNode> dic) { this.dic =
+	     * dic; }
+	     * 
+	     * @Override public void row(String line, int n) { if (line.length() <
+	     * 2) { return; } CharNode cn = dic.get(line.charAt(0)); if (cn == null)
+	     * { cn = new CharNode(); dic.put(line.charAt(0), cn); }
+	     * cn.addWordTail(tail(line)); } }
+	     */
 
 	/**
 	 * 加载词文件的模板

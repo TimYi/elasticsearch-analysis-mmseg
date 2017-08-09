@@ -10,8 +10,12 @@ Versions
 
 Mmseg ver  | ES version
 -----------|-----------
-master | 2.3.x -> master
-1.10.0 | 2.4.0
+master | 5.x -> master
+5.4.1 | 5.4.1
+5.3.2 | 5.3.2
+5.2.2 | 5.2.2
+5.1.2 | 5.1.2
+1.10.1 | 2.4.1
 1.9.5 | 2.3.5
 1.8.1 | 2.2.1
 1.7.0 | 2.1.1
@@ -34,27 +38,7 @@ Install
 
 Unzip and place into elasticsearch's plugins folder,
 you can checkout example from https://github.com/medcl/elasticsearch-rtf
-
-Custom Analysis Configuration Example (elasticsearch.yml)
--------------
-
-
-```
-index:
-  analysis:
-    analyzer:
-      mmseg_maxword:
-        type: custom
-        filter:
-        - lowercase
-        tokenizer: mmseg_maxword
-      mmseg_maxword_with_cut_letter_digi:
-        type: custom
-        filter:
-        - lowercase
-        - cut_letter_digit
-        tokenizer: mmseg_maxword    
-```
+Download plugin from here: https://github.com/medcl/elasticsearch-analysis-mmseg/releases
 
 Mapping Configuration
 -------------
@@ -82,7 +66,7 @@ curl -XPOST http://localhost:9200/index/fulltext/_mapping -d'
         },
         "properties": {
             "content": {
-                "type": "string",
+                "type": "text",
                 "store": "no",
                 "term_vector": "with_positions_offsets",
                 "analyzer": "mmseg_maxword",
@@ -99,19 +83,19 @@ curl -XPOST http://localhost:9200/index/fulltext/_mapping -d'
 
 ```
 curl -XPOST http://localhost:9200/index/fulltext/1 -d'
-{content:"美国留给伊拉克的是个烂摊子吗"}
+{"content":"美国留给伊拉克的是个烂摊子吗"}
 '
 
 curl -XPOST http://localhost:9200/index/fulltext/2 -d'
-{content:"公安部：各地校车将享最高路权"}
+{"content":"公安部：各地校车将享最高路权"}
 '
 
 curl -XPOST http://localhost:9200/index/fulltext/3 -d'
-{content:"中韩渔警冲突调查：韩警平均每天扣1艘中国渔船"}
+{"content":"中韩渔警冲突调查：韩警平均每天扣1艘中国渔船"}
 '
 
 curl -XPOST http://localhost:9200/index/fulltext/4 -d'
-{content:"中国驻洛杉矶领事馆遭亚裔男子枪击 嫌犯已自首"}
+{"content":"中国驻洛杉矶领事馆遭亚裔男子枪击 嫌犯已自首"}
 '
 ```
 
