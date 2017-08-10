@@ -6,11 +6,13 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.session.AutoMappingBehavior;
 import org.apache.ibatis.session.ExecutorType;
 import org.elasticsearch.common.io.PathUtils;
 import org.elasticsearch.plugin.analysis.mmseg.AnalysisMMsegPlugin;
 import org.mybatis.spring.SqlSessionFactoryBean;
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -26,15 +28,16 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 @Configuration()
 @ComponentScan(value = "com.jiurong", lazyInit = false)
+@MapperScan(value = "com.jiurong", annotationClass = Mapper.class)
 @EnableTransactionManagement(proxyTargetClass = true)
 @EnableScheduling
 public class AppConfig {
 
-	@Value("${url}")
+	@Value("${jdbc.url}")
 	private String url;
-	@Value("${username}")
+	@Value("${jdbc.username}")
 	private String username;
-	@Value("${password}")
+	@Value("${jdbc.password}")
 	private String password;
 
 	@Bean
@@ -68,6 +71,7 @@ public class AppConfig {
 
 	@Bean
 	public DataSource dataSource() {
+		Thread.currentThread().setContextClassLoader(AnalysisMMsegPlugin.class.getClassLoader());
 		DriverManagerDataSource dataSource = new DriverManagerDataSource();
 		dataSource.setUrl(url);
 		dataSource.setUsername(username);
@@ -91,7 +95,10 @@ public class AppConfig {
 		configuration.setAutoMappingBehavior(AutoMappingBehavior.PARTIAL);
 		configuration.setMapUnderscoreToCamelCase(true);
 		sqlSessionFactoryBean.setConfiguration(configuration);
-		Resource mapperLocation = new ClassPathResource("mybatis/mapper/**/*.xml");
+		Resource mapperLocation = new ClassPathResource("mybatis/mapper/KeywordMapper.xml");
+		if (!mapperLocation.exists()) {
+			throw new RuntimeException("mapper location not exists");
+		}
 		Resource[] mapperLocations = { mapperLocation };
 		sqlSessionFactoryBean.setMapperLocations(mapperLocations);
 		return sqlSessionFactoryBean;
