@@ -10,20 +10,20 @@
     	<result property="isChar" column="is_char"/>
     	<result property="freq" column="freq"/>
     	<result property="createTime" column="create_time"/>
-    	<result property="isNewWord" column="is_newword"/>
+    	<result property="newWord" column="is_newword"/>
     </resultMap>
     
     <sql id="dbname">mmseg_keyword</sql>
     
     <insert id="add" parameterType="com.jiurong.search.plugin.Keyword">
         insert into <include refid="dbname" />(text, is_char, freq, create_time, is_newword)
-        values(#{text}, #{isChar}, #{freq}, NOW(3), #{isNewWord})
+        values(#{text}, #{isChar}, #{freq}, NOW(3), #{newWord})
     </insert>
     <insert id="addAll" parameterType="com.jiurong.search.plugin.Keyword">
         insert into <include refid="dbname" />(text, is_char, freq, create_time, is_newword)
         values
         <foreach collection="collection" separator="," item="i">
-            (#{i.text}, #{i.isChar}, #{i.freq}, NOW(3), #{i.isNewWord})
+            (#{i.text}, #{i.isChar}, #{i.freq}, NOW(3), #{i.newWord})
         </foreach>
     </insert>
     <select id="exists" resultType="int">
