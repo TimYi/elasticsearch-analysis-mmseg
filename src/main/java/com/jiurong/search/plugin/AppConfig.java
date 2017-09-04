@@ -54,12 +54,10 @@ public class AppConfig {
 		}
 
 		String path = PathUtils
-		        .get(new File(AnalysisMMsegPlugin.class.getProtectionDomain().getCodeSource().getLocation().getPath())
-		                .getParent(), appConfigPath)
-		        .toAbsolutePath().toString();
-		if (path.startsWith("/")) {
-			path = "file:" + path;
-		}
+				.get(new File(AnalysisMMsegPlugin.class.getProtectionDomain().getCodeSource().getLocation().getPath())
+						.getParent(), appConfigPath)
+				.toAbsolutePath().toString();
+		path = "file:" + path;
 		try {
 			UrlResource urlResource = new UrlResource(path);
 			configurer.setLocation(urlResource);

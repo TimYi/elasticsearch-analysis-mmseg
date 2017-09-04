@@ -43,7 +43,10 @@
     	select * from <include refid="dbname" /> where is_newword = 1
     </select>
     <update id="updateIsNewWord" parameterType="Date">
-    	update <include refid="dbname" /> set is_newword = 0 where create_time &lt;= #{maxCreateDate}
+    	update <include refid="dbname" /> set is_newword = 0 
+        <if test="maxCreateDate != null">
+            where create_time &lt;= #{maxCreateDate}
+        </if>
     </update>
     
 </mapper>
