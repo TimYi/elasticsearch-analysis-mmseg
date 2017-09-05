@@ -44,8 +44,9 @@
     </select>
     <update id="updateIsNewWord" parameterType="Date">
     	update <include refid="dbname" /> set is_newword = 0 
+    	where is_newword = 1
         <if test="maxCreateDate != null">
-            where create_time &lt;= #{maxCreateDate}
+            and create_time &lt;= #{maxCreateDate}
         </if>
     </update>
     

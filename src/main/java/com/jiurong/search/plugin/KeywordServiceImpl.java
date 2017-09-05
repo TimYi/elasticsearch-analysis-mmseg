@@ -137,7 +137,7 @@ public class KeywordServiceImpl implements KeywordService {
 	}
 
 	@Override
-	@Scheduled(fixedDelay = 1000)
+	@Scheduled(fixedDelay = 30000)
 	public void syncNewWords() {
 		AccessController.doPrivileged(new PrivilegedAction<Object>() {
 			@Override
@@ -147,14 +147,14 @@ public class KeywordServiceImpl implements KeywordService {
 					return null;
 				}
 				try {
-					java.util.Date utilDate = getLatestUpdate();
-					if (utilDate != maxCreateDate) {
+					java.util.Date lastDate = getLatestUpdate();
+					if (lastDate != maxCreateDate) {
 						List<Keyword> newWords = getAllNewWords();
-						if (newWords != null) {
-							maxCreateDate = utilDate;
+						if (newWords != null && !newWords.isEmpty()) {
 							dic.addKeywordsToDic(newWords);
-							updateIsNewWord(maxCreateDate);
+							updateIsNewWord(lastDate);
 						}
+						maxCreateDate = lastDate;
 					}
 				} catch (Exception e) { // fixedDelay如果有异常，会终止整个调度，因此异常必须捕获并记录日志
 					log.error(e.getMessage(), e, new Object[0]);
